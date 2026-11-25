@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>فاحص | هل الرسالة دي نصب؟</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="glow glow-a"></div>
+<div class="glow glow-b"></div>
+
+<main class="wrap">
+
+  <header class="brand">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/>
+        <path d="M9 12l2 2 4-4"/>
+      </svg>
+    </div>
+    <h1>فاحص</h1>
+    <p>الزق أي رسالة أو لينك شاكك فيه، والذكاء الاصطناعي يقولك في ثواني: نصب ولا لأ</p>
+  </header>
+
+  <section class="panel">
+    <label class="field-label" for="msg">الرسالة أو اللينك</label>
+    <textarea id="msg" rows="5" maxlength="5000"
+      placeholder="مثال: عميلنا العزيز تم إيقاف حسابك، لتنشيط الحساب اضغط على الرابط..."></textarea>
+
+    <button id="go" type="button">
+      <span class="btn-text">افحص دلوقتي</span>
+      <span class="spinner" aria-hidden="true"></span>
+    </button>
+  </section>
+
+  <section id="result" class="panel result hidden">
+    <div id="verdict">
+      <span id="verdict-icon"></span>
+      <div>
+        <strong id="verdict-label"></strong>
+        <small id="verdict-pct"></small>
+      </div>
+    </div>
+    <div class="score-track"><div id="score-bar"></div></div>
+    <ul id="reasons"></ul>
+  </section>
+
+  <footer>
+    <p>النتيجة تقديرية ومش بديل عن الحذر. متبعتش بياناتك البنكية لأي حد مهما كانت النتيجة.</p>
+  </footer>
+
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

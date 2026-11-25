@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+data/rdap_cache.json
+.env
