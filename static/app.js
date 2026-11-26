@@ -220,13 +220,21 @@ imgInput.addEventListener("change", async () => {
     const { data } = await worker.recognize(file);
     const text = (data.text || "").trim();
     if (text.length >= 3) {
-      msgEl.value = msgEl.value.trim() ? msgEl.value.trim() + "\n" + text : text;
-      let note = "استخرجنا النص من الصورة وفضلناه في الخانة فوق. راجعه كويس - القراءة الآلية ممكن تغلط في كلمة أو اتنين - وبعدين اضغط افحص.";
+      // Verdict only: the extracted text is never shown or put in the box.
+      const resp = await fetch("/api/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text.slice(0, 5000) }),
+      });
+      const res = await resp.json();
+      if (!resp.ok) throw new Error("check");
+      showVerdict(res.verdict, res.score, res.reasons);
+      lastCheck = { verdict: res.verdict, score: res.score, source: "image", text: "" };
       if (hasMangledLink(text)) {
-        note += " فيه ما يبدو إنه لينك أو حساب في الصورة بس القراءة شوّهته وظهر كأصفار - لو تقدر تنسخ الرسالة نصًا، الفحص هيبقى أدق.";
+        setOcrStatus("فيه لينك أو حساب في الصورة القراءة مقدرتش تقراه كويس. لو تقدر تنسخ الرسالة نصًا الفحص هيبقى أدق.", "ok");
+      } else {
+        setOcrStatus("", "");
       }
-      setOcrStatus(note, "ok");
-      msgEl.focus();
     } else {
       setOcrStatus("مقدرناش نلاقي نص واضح في الصورة. جرب سكرينشوت أوضح أو اكتب الرسالة بنفسك.", "err");
     }
