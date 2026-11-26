@@ -121,6 +121,18 @@ function setOcrStatus(text, cls) {
   if (!text) ocrStatus.classList.add("hidden");
 }
 
+// Tesseract reads small Latin URLs/@handles in Arabic screenshots as runs of
+// zeros ("0000:0000-000.000"). Detect that shape so we can warn the user that
+// a link was mangled instead of silently checking a blind text.
+function hasMangledLink(text) {
+  const tokens = text.match(/[0O0-9:.\-/]{8,}/g) || [];
+  for (const t of tokens) {
+    const zeros = (t.match(/[0O]/g) || []).length;
+    if (zeros / t.length >= 0.6 && /[:.\-]/.test(t)) return true;
+  }
+  return false;
+}
+
 async function getOcrWorker() {
   if (ocrWorker) return ocrWorker;
   setOcrStatus("بنجهز قارئ الصور أول مرة...", "");
@@ -209,7 +221,11 @@ imgInput.addEventListener("change", async () => {
     const text = (data.text || "").trim();
     if (text.length >= 3) {
       msgEl.value = msgEl.value.trim() ? msgEl.value.trim() + "\n" + text : text;
-      setOcrStatus("استخرجنا النص من الصورة وفضلناه في الخانة فوق. راجعه كويس - القراءة الآلية ممكن تغلط في كلمة أو اتنين - وبعدين اضغط افحص.", "ok");
+      let note = "استخرجنا النص من الصورة وفضلناه في الخانة فوق. راجعه كويس - القراءة الآلية ممكن تغلط في كلمة أو اتنين - وبعدين اضغط افحص.";
+      if (hasMangledLink(text)) {
+        note += " فيه ما يبدو إنه لينك أو حساب في الصورة بس القراءة شوّهته وظهر كأصفار - لو تقدر تنسخ الرسالة نصًا، الفحص هيبقى أدق.";
+      }
+      setOcrStatus(note, "ok");
       msgEl.focus();
     } else {
       setOcrStatus("مقدرناش نلاقي نص واضح في الصورة. جرب سكرينشوت أوضح أو اكتب الرسالة بنفسك.", "err");
