@@ -107,6 +107,34 @@ async function getOcrWorker() {
 
 pickBtn.addEventListener("click", () => { if (!ocrBusy) imgInput.click(); });
 
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(",")[1] || "");
+    r.onerror = () => reject(new Error("read"));
+    r.readAsDataURL(file);
+  });
+}
+
+// Server-side vision: image in, verdict out, no text is ever shown.
+// Returns the verdict object, or null when the server has no vision key
+// (503) so the caller falls back to in-browser OCR.
+async function checkImageServerSide(file) {
+  const b64 = await fileToBase64(file);
+  const resp = await fetch("/api/check-image", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ image: b64, mime: file.type || "image/png" }),
+  });
+  if (resp.status === 503) return null;
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    if (data.error === "no_text") return { noText: true };
+    throw new Error("server");
+  }
+  return data;
+}
+
 imgInput.addEventListener("change", async () => {
   const file = imgInput.files && imgInput.files[0];
   if (!file) return;
@@ -114,6 +142,30 @@ imgInput.addEventListener("change", async () => {
   preview.classList.remove("hidden");
   ocrBusy = true;
   pickBtn.disabled = true;
+
+  // Preferred path: the server reads the screenshot and returns the verdict
+  // directly. The extracted text never reaches the page.
+  try {
+    setOcrStatus("بيفحص الصورة...", "");
+    const data = await checkImageServerSide(file);
+    if (data && !data.noText) {
+      setOcrStatus("", "");
+      showVerdict(data.verdict, data.score, data.reasons);
+      ocrBusy = false;
+      pickBtn.disabled = false;
+      return;
+    }
+    if (data && data.noText) {
+      setOcrStatus("مقدرناش نلاقي نص واضح في الصورة. جرب سكرينشوت أوضح أو اكتب الرسالة بنفسك.", "err");
+      ocrBusy = false;
+      pickBtn.disabled = false;
+      return;
+    }
+    // data === null: server has no vision key, fall through to in-browser OCR.
+  } catch (e) {
+    // Server path failed, fall through to in-browser OCR.
+  }
+
   try {
     const worker = await getOcrWorker();
     const { data } = await worker.recognize(file);
