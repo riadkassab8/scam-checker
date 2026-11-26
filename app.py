@@ -6,7 +6,7 @@ a verdict: safe / suspicious / scam, with short reasons.
 Run:  python app.py        then open http://127.0.0.1:5000
 """
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, redirect, render_template, request, send_from_directory
 
 import json
 import os
@@ -75,6 +75,33 @@ def analyze(text):
             "domain_age": age_status,
         },
     }
+
+
+@app.route("/sw.js")
+def service_worker():
+    """Served from the site root so its scope covers the whole site
+    (a worker under /static/ could not receive shares for /)."""
+    resp = send_from_directory(app.static_folder, "sw.js", mimetype="application/javascript")
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
+@app.route("/tips")
+def tips():
+    return render_template("tips.html")
+
+
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+
+@app.route("/share-target", methods=["POST", "GET"])
+def share_target_fallback():
+    """Normally the service worker intercepts shares (so images never reach
+    the server). This only runs when no worker is active: nothing is read or
+    kept, the visitor is just sent to the home page."""
+    return redirect("/", code=303)
 
 
 @app.route("/api/check", methods=["POST"])

@@ -238,3 +238,22 @@ button.ghost svg { flex-shrink: 0; color: var(--accent-2); }
 .feedback-row button { font-size: 20px; background: none; border: 1px solid #2a3140; border-radius: 8px; padding: 4px 10px; cursor: pointer; opacity: .75; }
 .feedback-row button:hover { opacity: 1; border-color: #4a5568; }
 .feedback-row button.picked { opacity: 1; border-color: #2dd4a8; background: rgba(45,212,168,.12); }
+
+.next-steps { margin-top: 16px; padding: 14px 16px; border: 1px solid rgba(248,113,113,.35); background: rgba(248,113,113,.07); border-radius: 14px; font-size: 14.5px; line-height: 1.9; }
+.next-steps h3 { font-size: 16px; margin-bottom: 6px; }
+.next-steps ul { padding-inline-start: 20px; }
+.next-steps .ns-title { margin-top: 10px; font-weight: 700; }
+.ns-links { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.ns-links a { color: var(--text); text-decoration: none; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 8px 12px; }
+.ns-links a b { color: var(--accent-2); margin-inline-end: 8px; font-size: 16px; }
+.ns-src { margin-top: 8px; font-size: 12px; color: var(--muted); }
+.ns-src a, .foot-links a { color: var(--accent-2); }
+.foot-links { margin-top: 8px; }
+.doc h2 { font-size: 17px; margin: 18px 0 6px; color: var(--accent-2); }
+.doc h2:first-child { margin-top: 0; }
+.doc p { line-height: 2; font-size: 15px; color: var(--text); }
+.doc a { color: var(--accent-2); }
+.feedback-row span { flex: 1; white-space: nowrap; }
+.feedback-row button { flex: 0 0 auto; min-width: 52px; }
+.feedback-row button { width: auto !important; flex: 0 0 auto; padding: 6px 14px; }
+.feedback-row { flex-wrap: nowrap; }
