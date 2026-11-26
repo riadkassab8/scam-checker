@@ -1,7 +1,9 @@
 # Fahes - Scam Checker
 
 > Arabic-first web tool that tells you in seconds whether a suspicious message
-> or link is safe, suspicious, or a scam, with a short reason. Layers: 12 rule
+> or link is safe, suspicious, or a scam, with a short reason. Paste the text,
+> or upload a screenshot of the message - the text is read in your browser
+> (tesseract.js, nothing is uploaded) and checked by the same engine. Layers: 12 rule
 > families from a worldwide scam survey, an OpenPhish snapshot, live domain-age
 > checks (RDAP), optional VirusTotal/Safe Browsing reputation, and a text model
 > trained on 22,715 real messages in 40+ languages. Docs below are in Arabic.

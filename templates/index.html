@@ -32,6 +32,19 @@
     <textarea id="msg" rows="5" maxlength="5000"
       placeholder="مثال: عميلنا العزيز تم إيقاف حسابك، لتنشيط الحساب اضغط على الرابط..."></textarea>
 
+    <div class="upload-row">
+      <input type="file" id="img" accept="image/*" hidden>
+      <button id="pick" type="button" class="ghost">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span>أو ارفع سكرينشوت للرسالة</span>
+      </button>
+      <div id="img-preview" class="hidden">
+        <img id="img-thumb" alt="">
+        <button id="img-remove" type="button" aria-label="شيل الصورة">✕</button>
+      </div>
+    </div>
+    <p id="ocr-status" class="hidden"></p>
+
     <button id="go" type="button">
       <span class="btn-text">افحص دلوقتي</span>
       <span class="spinner" aria-hidden="true"></span>
@@ -48,6 +61,10 @@
     </div>
     <div class="score-track"><div id="score-bar"></div></div>
     <ul id="reasons"></ul>
+    <button id="reset" type="button" class="ghost reset-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+      <span>تحليل جديد</span>
+    </button>
   </section>
 
   <footer>

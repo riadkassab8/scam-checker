@@ -6,6 +6,15 @@ const labelEl = document.getElementById("verdict-label");
 const pctEl = document.getElementById("verdict-pct");
 const barEl = document.getElementById("score-bar");
 const reasonsEl = document.getElementById("reasons");
+const msgEl = document.getElementById("msg");
+
+const imgInput = document.getElementById("img");
+const pickBtn = document.getElementById("pick");
+const preview = document.getElementById("img-preview");
+const thumb = document.getElementById("img-thumb");
+const imgRemove = document.getElementById("img-remove");
+const ocrStatus = document.getElementById("ocr-status");
+const resetBtn = document.getElementById("reset");
 
 const LABELS = {
   safe: "آمن غالبًا",
@@ -40,7 +49,7 @@ function showVerdict(kind, score, reasons) {
 }
 
 btn.addEventListener("click", async () => {
-  const text = document.getElementById("msg").value.trim();
+  const text = msgEl.value.trim();
   if (!text) return;
   setLoading(true);
   try {
@@ -61,6 +70,84 @@ btn.addEventListener("click", async () => {
   setLoading(false);
 });
 
-document.getElementById("msg").addEventListener("keydown", (e) => {
+msgEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) btn.click();
+});
+
+/* ---------- screenshot OCR (in-browser, nothing uploaded to the server) ---------- */
+
+let ocrWorker = null;
+let ocrBusy = false;
+
+function setOcrStatus(text, cls) {
+  ocrStatus.textContent = text || "";
+  ocrStatus.className = cls || (text ? "" : "hidden");
+  if (!text) ocrStatus.classList.add("hidden");
+}
+
+async function getOcrWorker() {
+  if (ocrWorker) return ocrWorker;
+  setOcrStatus("بنجهز قارئ الصور أول مرة...", "");
+  await new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+    s.onload = resolve;
+    s.onerror = () => reject(new Error("cdn"));
+    document.head.appendChild(s);
+  });
+  ocrWorker = await Tesseract.createWorker("ara+eng", 1, {
+    logger: (m) => {
+      if (m.status === "recognizing text") {
+        setOcrStatus("بيقرأ الصورة... " + Math.round(m.progress * 100) + "%", "");
+      }
+    },
+  });
+  return ocrWorker;
+}
+
+pickBtn.addEventListener("click", () => { if (!ocrBusy) imgInput.click(); });
+
+imgInput.addEventListener("change", async () => {
+  const file = imgInput.files && imgInput.files[0];
+  if (!file) return;
+  thumb.src = URL.createObjectURL(file);
+  preview.classList.remove("hidden");
+  ocrBusy = true;
+  pickBtn.disabled = true;
+  try {
+    const worker = await getOcrWorker();
+    const { data } = await worker.recognize(file);
+    const text = (data.text || "").trim();
+    if (text.length >= 3) {
+      msgEl.value = msgEl.value.trim() ? msgEl.value.trim() + "\n" + text : text;
+      setOcrStatus("استخرجنا النص من الصورة وفضلناه في الخانة فوق. راجعه كويس - القراءة الآلية ممكن تغلط في كلمة أو اتنين - وبعدين اضغط افحص.", "ok");
+      msgEl.focus();
+    } else {
+      setOcrStatus("مقدرناش نلاقي نص واضح في الصورة. جرب سكرينشوت أوضح أو اكتب الرسالة بنفسك.", "err");
+    }
+  } catch (e) {
+    setOcrStatus("قراءة الصورة فشلت. اتأكد من النت وجرب تاني، أو اكتب الرسالة بنفسك.", "err");
+  }
+  ocrBusy = false;
+  pickBtn.disabled = false;
+});
+
+imgRemove.addEventListener("click", () => {
+  imgInput.value = "";
+  preview.classList.add("hidden");
+  thumb.removeAttribute("src");
+  if (!ocrBusy) setOcrStatus("", "");
+});
+
+/* ---------- new analysis ---------- */
+
+resetBtn.addEventListener("click", () => {
+  msgEl.value = "";
+  imgInput.value = "";
+  preview.classList.add("hidden");
+  thumb.removeAttribute("src");
+  setOcrStatus("", "");
+  box.className = "panel result hidden";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  msgEl.focus();
 });
