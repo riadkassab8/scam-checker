@@ -95,6 +95,27 @@ OCR_PROMPT = (
 )
 
 
+def _list_model_names(api_key):
+    """Ask Google which models this key can actually use; flash first."""
+    url = ("https://generativelanguage.googleapis.com/v1beta/models"
+           "?pageSize=100&key=" + api_key)
+    try:
+        with urllib.request.urlopen(url, timeout=20) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+        names = []
+        for m in body.get("models", []):
+            methods = m.get("supportedGenerationMethods", [])
+            if "generateContent" not in methods:
+                continue
+            name = (m.get("name") or "").replace("models/", "")
+            if name.startswith("gemini") and "image" not in name and "tts" not in name and "audio" not in name and "live" not in name:
+                names.append(name)
+        names.sort(key=lambda n: ("flash" not in n, "lite" not in n, n))
+        return names
+    except Exception:
+        return []
+
+
 def _ocr_with_gemini(image_b64, mime):
     """Extract text via a vision model. Needs GEMINI_API_KEY in the env.
     Returns (text, None) on success, (None, "no_key") without a key, or
@@ -114,6 +135,11 @@ def _ocr_with_gemini(image_b64, mime):
         ]}],
         "generationConfig": {"temperature": 0, "maxOutputTokens": 1500},
     }).encode("utf-8")
+    if not override:
+        discovered = _list_model_names(api_key)
+        if discovered:
+            candidates = candidates + [m for m in discovered
+                                       if m not in candidates]
     last_err = "no_model"
     for model_name in candidates:
         url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
