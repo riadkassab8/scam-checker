@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: scam-checker
+    env: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /
