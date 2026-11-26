@@ -15,6 +15,13 @@ const thumb = document.getElementById("img-thumb");
 const imgRemove = document.getElementById("img-remove");
 const ocrStatus = document.getElementById("ocr-status");
 const resetBtn = document.getElementById("reset");
+const fbRow = document.getElementById("feedback");
+const fbQ = document.getElementById("feedback-q");
+const fbUp = document.getElementById("fb-up");
+const fbDown = document.getElementById("fb-down");
+
+let lastCheck = null; // {verdict, score, source, text} for feedback
+let fbSent = false;
 
 const LABELS = {
   safe: "آمن غالبًا",
@@ -45,8 +52,36 @@ function showVerdict(kind, score, reasons) {
     li.textContent = r;
     reasonsEl.appendChild(li);
   }
+  fbRow.classList.remove("hidden");
+  fbQ.textContent = "النتيجة دي صح؟";
+  fbUp.classList.remove("picked");
+  fbDown.classList.remove("picked");
+  fbSent = false;
   box.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
+
+async function sendFeedback(vote) {
+  if (fbSent || !lastCheck) return;
+  fbSent = true;
+  (vote === "up" ? fbUp : fbDown).classList.add("picked");
+  fbQ.textContent = "شكرًا! ملاحظتك بتساعد الفحص يتحسن.";
+  try {
+    await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        vote,
+        verdict: lastCheck.verdict,
+        score: lastCheck.score,
+        source: lastCheck.source,
+        text: lastCheck.text || "",
+      }),
+    });
+  } catch (e) { /* feedback is best-effort */ }
+}
+
+fbUp.addEventListener("click", () => sendFeedback("up"));
+fbDown.addEventListener("click", () => sendFeedback("down"));
 
 btn.addEventListener("click", async () => {
   const text = msgEl.value.trim();
@@ -63,6 +98,7 @@ btn.addEventListener("click", async () => {
       showVerdict("suspicious", 0.5, [data.error === "too_long" ? "الرسالة طويلة أوي، قصّرها وجرب تاني" : "حصل خطأ غير متوقع، جرب تاني"]);
     } else {
       showVerdict(data.verdict, data.score, data.reasons);
+      lastCheck = { verdict: data.verdict, score: data.score, source: "text", text };
     }
   } catch (e) {
     showVerdict("suspicious", 0.5, ["مش قادر أوصل للخادم، اتأكد إن البرنامج شغال وجرب تاني"]);
@@ -151,6 +187,7 @@ imgInput.addEventListener("change", async () => {
     if (data && !data.noText) {
       setOcrStatus("", "");
       showVerdict(data.verdict, data.score, data.reasons);
+      lastCheck = { verdict: data.verdict, score: data.score, source: "image", text: "" };
       ocrBusy = false;
       pickBtn.disabled = false;
       return;
@@ -200,6 +237,22 @@ resetBtn.addEventListener("click", () => {
   thumb.removeAttribute("src");
   setOcrStatus("", "");
   box.className = "panel result hidden";
+  fbRow.classList.add("hidden");
+  lastCheck = null;
   window.scrollTo({ top: 0, behavior: "smooth" });
   msgEl.focus();
 });
+
+/* ---------- share target / prefill + PWA registration ---------- */
+
+(function () {
+  const p = new URLSearchParams(location.search);
+  const shared = (p.get("text") || "") + " " + (p.get("url") || "");
+  if (shared.trim()) {
+    msgEl.value = shared.trim().slice(0, 5000);
+    history.replaceState(null, "", location.pathname);
+  }
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/static/sw.js").catch(() => {});
+  }
+})();

@@ -1,0 +1,21 @@
+{
+  "name": "فاحص - هل الرسالة دي نصب؟",
+  "short_name": "فاحص",
+  "description": "الزق أي رسالة أو لينك شاكك فيه، والذكاء الاصطناعي يقولك في ثواني: نصب ولا لأ",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}

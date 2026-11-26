@@ -88,6 +88,28 @@ def check():
     return jsonify(analyze(text))
 
 
+@app.route("/api/feedback", methods=["POST"])
+def feedback():
+    """One-tap verdict feedback. Logged as a JSON line (visible in the
+    hosting logs) so misjudged messages can be reviewed and folded back
+    into training data. The message text is only logged because the user
+    explicitly tapped a feedback button on it."""
+    data = request.get_json(silent=True) or {}
+    vote = data.get("vote")
+    if vote not in ("up", "down"):
+        return jsonify({"error": "bad_vote"}), 400
+    entry = {
+        "type": "feedback",
+        "vote": vote,
+        "verdict": str(data.get("verdict") or "")[:12],
+        "score": round(float(data.get("score") or 0), 3),
+        "source": str(data.get("source") or "text")[:8],
+        "text": str(data.get("text") or "")[:5000],
+    }
+    print(json.dumps(entry, ensure_ascii=False), flush=True)
+    return jsonify({"ok": True})
+
+
 OCR_PROMPT = (
     "Extract ALL text from this screenshot verbatim, exactly as written. "
     "Keep Arabic, English, numbers, URLs (http, t.me, etc.) and @handles "

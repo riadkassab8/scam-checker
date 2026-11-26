@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<meta name="theme-color" content="#0d1117">
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -62,6 +64,11 @@
     </div>
     <div class="score-track"><div id="score-bar"></div></div>
     <ul id="reasons"></ul>
+    <div id="feedback" class="feedback-row hidden">
+      <span id="feedback-q">النتيجة دي صح؟</span>
+      <button id="fb-up" type="button" aria-label="النتيجة صح">👍</button>
+      <button id="fb-down" type="button" aria-label="النتيجة غلط">👎</button>
+    </div>
     <button id="reset" type="button" class="ghost reset-btn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
       <span>تحليل جديد</span>
