@@ -102,9 +102,11 @@ def _ocr_with_gemini(image_b64, mime):
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
     if not api_key:
         return None, "no_key"
-    model_name = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
-    url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
-           f"{model_name}:generateContent?key={api_key}")
+    override = os.environ.get("GEMINI_MODEL", "").strip()
+    candidates = [override] if override else [
+        "gemini-2.5-flash", "gemini-2.5-flash-lite",
+        "gemini-2.0-flash", "gemini-2.0-flash-lite",
+    ]
     payload = json.dumps({
         "contents": [{"parts": [
             {"text": OCR_PROMPT},
@@ -112,16 +114,23 @@ def _ocr_with_gemini(image_b64, mime):
         ]}],
         "generationConfig": {"temperature": 0, "maxOutputTokens": 1500},
     }).encode("utf-8")
-    req = urllib.request.Request(url, data=payload,
-                                 headers={"Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            body = json.loads(resp.read().decode("utf-8"))
-        return body["candidates"][0]["content"]["parts"][0]["text"].strip(), None
-    except urllib.error.HTTPError as e:
-        return None, "upstream_%s" % e.code
-    except Exception as e:
-        return None, "upstream_error"
+    last_err = "no_model"
+    for model_name in candidates:
+        url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+               f"{model_name}:generateContent?key={api_key}")
+        req = urllib.request.Request(url, data=payload,
+                                     headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                body = json.loads(resp.read().decode("utf-8"))
+            return body["candidates"][0]["content"]["parts"][0]["text"].strip(), None
+        except urllib.error.HTTPError as e:
+            if e.code == 404 and not override:
+                continue  # model retired or not enabled for this key; try next
+            return None, "upstream_%s" % e.code
+        except Exception:
+            return None, "upstream_error"
+    return None, last_err
 
 
 @app.route("/api/check-image", methods=["POST"])
