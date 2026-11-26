@@ -340,7 +340,12 @@ async function buildCard() {
   x.fillStyle = "#f87171"; x.font = "700 40px Tajawal, sans-serif";
   if (lastResult.kind === "scam") x.fillText("متدوسش على اللينك ومتبعتش بيانات", W / 2, 1150);
   x.fillStyle = "#8b98a5"; x.font = "400 34px Tajawal, sans-serif";
-  x.fillText("اكشف أي رسالة على " + location.host, W / 2, 1260);
+  const FALLBACK_HOST = "scam-checker-beta.vercel.app";
+  const realHost = /^(localhost|127\.|0\.0\.0\.0|192\.168\.)/.test(location.hostname) ? FALLBACK_HOST : location.host;
+  x.direction = "ltr";
+  x.fillText(realHost, W / 2, 1275);
+  x.direction = "rtl";
+  x.fillText("اكشف أي رسالة على", W / 2, 1225);
   return new Promise((res) => c.toBlob(res, "image/png"));
 }
 

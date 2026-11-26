@@ -257,3 +257,4 @@ button.ghost svg { flex-shrink: 0; color: var(--accent-2); }
 .feedback-row button { flex: 0 0 auto; min-width: 52px; }
 .feedback-row button { width: auto !important; flex: 0 0 auto; padding: 6px 14px; }
 .feedback-row { flex-wrap: nowrap; }
+.feedback-row button { font-size: 14px; font-family: inherit; color: var(--text); }
