@@ -1,0 +1,11 @@
+.git/
+__pycache__/
+data/*.csv
+data/raw/
+model.joblib
+scam-methods-report.pdf
+build_dataset.py
+train_model.py
+eval_e2e.py
+export_model.py
+requirements-train.txt

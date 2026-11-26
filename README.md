@@ -23,7 +23,7 @@
 ## التشغيل
 
 ```
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-train.txt
 python build_dataset.py     # يجهز البيانات (مرة واحدة)
 python train_model.py       # يدرب الموديل ويطبع أرقام الدقة (مرة واحدة)
 python app.py               # يشغل الموقع
