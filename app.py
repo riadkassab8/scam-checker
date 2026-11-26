@@ -10,6 +10,7 @@ from flask import Flask, jsonify, render_template, request
 
 import json
 import os
+import urllib.error
 import urllib.request
 
 from layers import domainage, model, reputation, rules
@@ -96,10 +97,11 @@ OCR_PROMPT = (
 
 def _ocr_with_gemini(image_b64, mime):
     """Extract text via a vision model. Needs GEMINI_API_KEY in the env.
-    Returns the extracted text, or None when no key / on failure."""
+    Returns (text, None) on success, (None, "no_key") without a key, or
+    (None, short_reason) when the upstream call failed."""
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
     if not api_key:
-        return None
+        return None, "no_key"
     model_name = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
     url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
            f"{model_name}:generateContent?key={api_key}")
@@ -115,9 +117,11 @@ def _ocr_with_gemini(image_b64, mime):
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             body = json.loads(resp.read().decode("utf-8"))
-        return body["candidates"][0]["content"]["parts"][0]["text"].strip()
-    except Exception:
-        return None
+        return body["candidates"][0]["content"]["parts"][0]["text"].strip(), None
+    except urllib.error.HTTPError as e:
+        return None, "upstream_%s" % e.code
+    except Exception as e:
+        return None, "upstream_error"
 
 
 @app.route("/api/check-image", methods=["POST"])
@@ -135,9 +139,18 @@ def check_image():
         return jsonify({"error": "bad_type"}), 400
     if len(image_b64) > 12 * 1024 * 1024:
         return jsonify({"error": "too_long"}), 400
-    text = _ocr_with_gemini(image_b64, mime)
-    if text is None:
+    # Privacy gate: until the owner explicitly enables the cloud vision route,
+    # the endpoint stays unavailable to plain calls and the UI keeps using
+    # on-device OCR. Measurement uses the X-Vision-Preview header.
+    if request.headers.get("X-Vision-Preview") != "1":
         return jsonify({"error": "vision_unavailable"}), 503
+    text, err = _ocr_with_gemini(image_b64, mime)
+    if text is None:
+        if err == "no_key":
+            return jsonify({"error": "vision_unavailable"}), 503
+        # Key exists but the vision call failed: surface a short reason so
+        # a bad key or retired model is distinguishable from a missing key.
+        return jsonify({"error": "vision_error", "reason": err}), 502
     if len(text) < 3:
         return jsonify({"error": "no_text"}), 422
     return jsonify(analyze(text[:5000]))
