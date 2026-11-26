@@ -8,6 +8,10 @@ Run:  python app.py        then open http://127.0.0.1:5000
 
 from flask import Flask, jsonify, render_template, request
 
+import json
+import os
+import urllib.request
+
 from layers import domainage, model, reputation, rules
 
 app = Flask(__name__)
@@ -31,15 +35,7 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/api/check", methods=["POST"])
-def check():
-    data = request.get_json(silent=True) or {}
-    text = (data.get("text") or "").strip()
-    if not text:
-        return jsonify({"error": "empty"}), 400
-    if len(text) > 5000:
-        return jsonify({"error": "too_long"}), 400
-
+def analyze(text):
     rule_score, rule_reasons, urls, trusted_only = rules.run(text)
     rep_score, rep_reasons, rep_status = reputation.run(urls)
     age_score, age_reasons, age_status = domainage.run(urls, rules.TRUSTED_DOMAINS)
@@ -65,7 +61,7 @@ def check():
     if not reasons:
         reasons.append("ملقتش علامات نصب واضحة في الرسالة")
 
-    return jsonify({
+    return {
         "verdict": verdict,
         "score": round(final, 3),
         "reasons": reasons[:4],
@@ -77,7 +73,74 @@ def check():
             "reputation": rep_status,
             "domain_age": age_status,
         },
-    })
+    }
+
+
+@app.route("/api/check", methods=["POST"])
+def check():
+    data = request.get_json(silent=True) or {}
+    text = (data.get("text") or "").strip()
+    if not text:
+        return jsonify({"error": "empty"}), 400
+    if len(text) > 5000:
+        return jsonify({"error": "too_long"}), 400
+    return jsonify(analyze(text))
+
+
+OCR_PROMPT = (
+    "Extract ALL text from this screenshot verbatim, exactly as written. "
+    "Keep Arabic, English, numbers, URLs (http, t.me, etc.) and @handles "
+    "character-perfect. Output only the extracted text, no commentary."
+)
+
+
+def _ocr_with_gemini(image_b64, mime):
+    """Extract text via a vision model. Needs GEMINI_API_KEY in the env.
+    Returns the extracted text, or None when no key / on failure."""
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return None
+    model_name = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+    url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+           f"{model_name}:generateContent?key={api_key}")
+    payload = json.dumps({
+        "contents": [{"parts": [
+            {"text": OCR_PROMPT},
+            {"inline_data": {"mime_type": mime, "data": image_b64}},
+        ]}],
+        "generationConfig": {"temperature": 0, "maxOutputTokens": 1500},
+    }).encode("utf-8")
+    req = urllib.request.Request(url, data=payload,
+                                 headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+        return body["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except Exception:
+        return None
+
+
+@app.route("/api/check-image", methods=["POST"])
+def check_image():
+    """Image -> verdict. The server reads the text with a vision model and
+    runs the same engine. Returns the verdict only, never the extracted text.
+    Returns 503 when no vision key is configured so the client can fall back
+    to in-browser OCR."""
+    data = request.get_json(silent=True) or {}
+    image_b64 = data.get("image") or ""
+    mime = (data.get("mime") or "image/png").strip()
+    if not image_b64:
+        return jsonify({"error": "empty"}), 400
+    if mime not in ("image/png", "image/jpeg", "image/webp"):
+        return jsonify({"error": "bad_type"}), 400
+    if len(image_b64) > 12 * 1024 * 1024:
+        return jsonify({"error": "too_long"}), 400
+    text = _ocr_with_gemini(image_b64, mime)
+    if text is None:
+        return jsonify({"error": "vision_unavailable"}), 503
+    if len(text) < 3:
+        return jsonify({"error": "no_text"}), 422
+    return jsonify(analyze(text[:5000]))
 
 
 if __name__ == "__main__":

@@ -234,6 +234,251 @@ def read_shaghayegh(path, cap):
     return rows[:cap]
 
 
+# ---------- V2: broad scam-format coverage (jobs, courier, wallets, romance,
+# sextortion, loans, rentals, marketplace, charity, QR, Franco-Arabic) ----------
+# Same rule as above: modeled on documented public patterns, marked eg_synthetic.
+
+def _v2_job_scams():
+    out = []
+    brands = ["أمازون", "جوميا", "نون", "شي ان", "Amazon", "Noon", "Shein", "Jumia"]
+    pays = ["1000 ل 3000", "500 ل 1500", "2000 ل 5000", "800 ل 2500", "1500 ل 4000", "750 ل 2000"]
+    handles = ["vip347", "hr_amazon_eg", "jobs2026", "work_now9", "amz_recruit", "task_eg88"]
+    conds = ["السن +20 والطلبة غير متاحين", "السن من 21 ل 45", "متاح للجميع بدون خبرة",
+             "شرط السن +18", "بدون شهادة ولا خبرة", ""]
+    intros = ["مدير التوظيف:", "قسم الموارد البشرية:", "إدارة التوظيف:", "مسؤول التوظيف:", ""]
+    for b in brands:
+        for p in pays:
+            h = random.Random(hash((b, p)) % 10**6).choice(handles)
+            c = conds[(hash(b) + hash(p)) % len(conds)]
+            i = intros[(hash(b + p)) % len(intros)]
+            t = (f"شركة {b} {i} مطلوب موظفين للعمل اونلاين جزئي من الموبايل. "
+                 f"اكسب من {p} جنيه يوميا وانت في البيت، الدفع في نفس اليوم. "
+                 f"للتواصل عبر تليجرام @{h} او t.me/{h}")
+            if c:
+                t += f" - ملحوظة: {c}"
+            out.append(t)
+    out += [
+        "وظيفة اونلاين: اعمل لايكات لفيديوهات واكسب عمولة يومية 200 جنيه، للتسجيل كلمنا تليجرام",
+        "مهام بسيطة من موبايلك: لايك واشتراك واكسب فلوس يوميا، الدفع عبر تليجرام بعد كل مهمة",
+        "مطلوب 50 شخص يقيموا منتجات على النت، عمولة يومية مضمونة، تواصل تليجرام للبدء فورا",
+        "Amazon hiring 80 remote part-time workers, earn 1000-3000 EGP daily from your phone, paid same day. Contact Telegram @vip347 (must be 20+, no students)",
+        "We are hiring! Work from home, no experience needed, daily income $50-$150, paid instantly. Message us on Telegram to start today",
+        "شغل من البيت براتب يومي 700 جنيه، بدون خبرة، ابعت كلمة 'تم' على التليجرام وهنشرحلك",
+        "تليجرام للشغل: قناة فيها شغل يومي بفلوس كاش كل يوم، ادخل الجروب وابدا اكسب",
+    ]
+    return out
+
+
+def _v2_courier():
+    return [
+        "شركة الشحن: طردك محتجز في الجمارك، ادفع رسوم جمركية 120 جنيه عبر الرابط لتسليمه",
+        "تعذر توصيل شحنتك لأن العنوان غير مكتمل، حدث بياناتك خلال 24 ساعة وإلا سيتم إرجاعها",
+        "DHL: your package is held at customs, pay the clearance fee here to release it",
+        "فشل توصيل الطرد، محاولة توصيل فاشلة. ادفع رسوم إعادة التوصيل من الرابط",
+        "بريد مصر: شحنتك متوقفة لحين سداد رسوم التخليص الجمركي، اضغط للدفع",
+        "Your parcel delivery failed due to an incomplete address. Pay the redelivery fee to reschedule",
+        "أرامكس: في رسوم جمركية على شحنتك 85 جنيه، سددها اونلاين عشان تتسلم",
+        "مكتب البريد: عندك طرد عالق، ادفع رسم التخزين 40 جنيه قبل إرجاعه للمرسل",
+    ]
+
+
+def _v2_wallet():
+    return [
+        "حولتلك 3000 جنيه بالغلط على محفظتك، لو سمحت ارجعلي الفلوس على الرقم ده",
+        "يا أخي التحويل اتعمل بالخطأ، رجعلي المبلغ فودافون كاش وأنا تحت أمرك",
+        "محفظتك اتوقفت لأسباب أمنية، فعل المحفظة من الرابط ده عشان تقدر تستلم فلوس",
+        "فودافون كاش: محتاجين تأكيد محفظتك، اكتب الرقم السري هنا للتحقق",
+        "I sent you money by mistake, please refund the transfer to this wallet",
+        "انستاباي: في حوالة واردة مستنية تفعيل حسابك، ادخل بيانات بطاقتك للاستلام",
+        "وصلك مبلغ معلق! اكد محفظتك دلوقتي بإدخال الرقم السري وإلا هيرجع للمرسل",
+        "تم إيقاف محفظة الموبايل مؤقتا، لتفعيل المحفظة اضغط على الرابط وسجل الدخول",
+    ]
+
+
+def _v2_romance_inherit():
+    return [
+        "أنا أرملة من سوريا وورثت 3 مليون دولار، محتاجة شريك يستلم المبلغ وهتاخد 40%",
+        "محامي في لندن: موكلي المتوفي له تركة 2.5 مليون يورو وأنت next of kin، رد للتفاصيل",
+        "My late client left an unclaimed deposit of $4.7M. I want to present you as next of kin. Reply for details",
+        "حبيبتي انا العسكري جون من القوات الأمريكية، عايز أبعتلك صندوق فيه فلوس، ادفعي بس رسوم الجمارك",
+        "I am a UN peacekeeping doctor in Yemen, I want to send you a package with my savings, pay the customs fee for me my love",
+        "خطيبك من الخليج: حبيبي ابعتيلي كروت شحن عشان أكلمك، رصيدي خلص",
+        "Dear beloved, I am a widow with an inheritance of millions, help me transfer it and you will get half",
+        "شخص مجهول عايز يحولك ميراث عمك اللي مات في الخارج، ابعت بياناتك البنكية كاملة",
+    ]
+
+
+def _v2_sextortion():
+    return [
+        "سجلنا فيديو خاص ليك من الكاميرا، ادفع 500 دولار بيتكوين وإلا هننشره لكل أصحابك",
+        "عندنا صورك المحرجة، حول المبلغ على المحفظة دي وإلا هنفضحك قدام عيلتك",
+        "We recorded you through your webcam. Pay in bitcoin or we publish your video to all contacts",
+        "I have your embarrassing video. Send BTC to this wallet within 24 hours or everyone sees it",
+        "هفضحك بالفيديو اللي معايا لو مبعتتش 5000 جنيه فودافون كاش قبل بكرة",
+        "جهازك اتخترق وكل صورك الخاصة عندنا، الدفع بيتكوين وإلا الفضيحة",
+    ]
+
+
+def _v2_loan():
+    return [
+        "قرض فوري بدون ضمانات وبدون مقدم، من 5000 ل 500 ألف جنيه، التمويل في 24 ساعة، كلمنا واتساب",
+        "قروض بدون ضمانات للموظفين والطلبة، تمويل شخصي سريع بإجراءات بسيطة، ابعت بياناتك",
+        "Get a loan today, approved within hours, no collateral needed. Quick cash, message us now",
+        "قرضك جاهز! تمت الموافقة المبدئية على تمويل 100 ألف، ادفع رسوم التفعيل للاستلام",
+        "تمويل مشروعك فوري وبدون فوائد، ابعت صورة البطاقة ومحل السكن للبدء",
+        "Quick loan offer: $1000-$50000 approved today, no credit check, small processing fee first",
+    ]
+
+
+def _v2_rental():
+    return [
+        "الشقة لسه متاحة، ادفع عربون 1000 جنيه فودافون كاش عشان أحجزلك الشقة قبل حد ياخدها",
+        "معاينة الشقة بكرة، بس لازم عربون الحجز الأول عشان الناس بتهزر كتير",
+        "Apartment available, pay the deposit before viewing and the keys will be sent to you",
+        "سكن طلبة: اوضة قريبة من الجامعة، احجز بعربون 500 جنيه والشقة مضمونة",
+        "للإيجار شقة مفروشة بسعر حلو، بس صاحبها في الخارج: ابعت العربون والمفاتيح هتوصلك بالبريد",
+    ]
+
+
+def _v2_marketplace():
+    return [
+        "هبعتلك المندوب يستلم التليفون وهو هيديك الفلوس، بس حولي 200 جنيه تأمين المندوب الأول",
+        "تمام يا باشا، المندوب في الطريق، ابعت رقمك السري عشان يقدر يحولك الفلوس على المحفظة",
+        "عايز المنتج، هبعت شركة شحن تدفعلك وتستلم، بس سجل في الرابط ده الأول",
+        "حول الثمن على فودافون كاش الأول وأنا أبعتلك المنتج بالبريد، متقلقش أنا موثوق",
+        "OLX buyer: I will send a courier with the cash, just pay the courier insurance fee first",
+        "الدفع كاش عند الاستلام، بس اطلب منك تحويل رمز التحقق اللي هيوصلك عشان أتأكد إنك جاد",
+    ]
+
+
+def _v2_charity_qr():
+    return [
+        "حالة إنسانية عاجلة: طفلة محتاجة عملية قلب بكرة، تبرع فوري على رقم المحفظة ده",
+        "ساهم معانا في علاج مريض، أي مبلغ يفرق، التبرع فودافون كاش على الرقم",
+        "Urgent donation needed for a sick child, donate now to this wallet, every dollar counts",
+        "امسح كود الـ QR ده عشان تستلم رصيدك المجاني من العرض",
+        "Scan the QR code to verify your wallet and receive your reward",
+        "رمز الاستجابة السريعة ده هيدخلك السحب على المليون، امسحه من الكاميرا",
+        "تبرعك العاجل مطلوب لضحايا الحريق، حول أي مبلغ على المحفظة دي جزاك الله خيرا",
+    ]
+
+
+def _v2_franco():
+    return [
+        "mabrouk ksebt gaya?za 10000 gneh, eb3at raqm el kart wel raqm el sery 3ashan testalemha",
+        "7esabak et2af, lazem ted5ol 3ala el link da w te2added el 7esab delwa2ti",
+        "7awwel 50 gneh 3ala el raqm da 3ashan te3addel el gawaz wel flous hatewasalak fawran",
+        "el kod elli haywessalak eb3atoholy, da kod el ta2kid beta3 el transfer",
+        "shoghl men el bet, ekseb 1000 gneh yawmian, kallemny telegram",
+        "eflous kteer men gher sho3'l, bas lazem tedfa3 رسوم صغيرة الأول",
+        "ana mama, raqmy el gedid da, telephone etkasser, eb3atily kart shahn 100 gneh 3ashan akallemk",
+        "your account is suspended, verify now: raqm el kart wel cvv",
+    ]
+
+
+def _v2_english_global():
+    return [
+        "USPS: your package cannot be delivered due to incomplete address, update here within 12h",
+        "Bank of America alert: unusual activity detected, verify your identity immediately",
+        "Your Apple ID has been locked. Confirm your account details to unlock",
+        "Netflix: your payment failed, update your billing information to keep your membership",
+        "IRS: you have a tax refund pending, submit your details to claim it",
+        "Your McAfee subscription expired, call this number immediately to avoid charges",
+        "Congratulations! You've been selected as the winner of our $1,000 Walmart gift card",
+        "COINBASE: A withdrawal of 0.45 BTC was requested. If not you, call support immediately",
+    ]
+
+
+EG_SCAM_V2 = (_v2_job_scams() + _v2_courier() + _v2_wallet() + _v2_romance_inherit()
+              + _v2_sextortion() + _v2_loan() + _v2_rental() + _v2_marketplace()
+              + _v2_charity_qr() + _v2_franco() + _v2_english_global())
+
+EG_LEGIT_V2 = [
+    # real telecom / wallet / transfer traffic (must NOT be flagged)
+    "فودافون: تم تجديد باقتك الشهرية بنجاح، رصيدك الحالي 12.5 جنيه",
+    "تم تحويل 200 جنيه من محفظة محمد أ. إلى محفظتك، الرصيد الحالي 430 جنيه",
+    "انستاباي: استلمت 1500 جنيه من شركة النور للتجارة",
+    "رسالة من البنك الأهلي: تم خصم 350 جنيه من بطاقتك لدى كارفور المعادي",
+    "كود التحقق الخاص بك هو 482910، لا تشاركه مع أي شخص",
+    "أورانج: عرض خاص ليك، ضعف الباقة لمدة شهر عند التجديد من تطبيق أورانج",
+    "WE: تم سداد فاتورة الإنترنت الأرضي بنجاح، شكرا لتعاملكم معنا",
+    # real delivery
+    "شحنتك من جوميا هتوصلك بكرة بين 10 صباحا و 6 مساء، تتبعها من التطبيق",
+    "أرامكس: تم تسليم شحنتك بنجاح، شكرا لتسوقكم معنا",
+    "طلبك من أمازون.إيجيبت في الطريق إليك، المندوب هيكلمك قبل الوصول",
+    # real job ads (monthly salary, formal channel)
+    "مطلوب محاسب خبرة 3 سنوات للعمل بشركة بالتجمع الخامس، راتب 8000 جنيه شهريا، التقديم على الإيميل jobs@company.com",
+    "وظيفة مطور تطبيقات بشركة برمجيات بالمهندسين، راتب مجزي حسب الخبرة، قدم عبر لينكد إن",
+    "شركة أدوية تطلب مندوبين مبيعات، مقابلة يوم الثلاثاء في المقر الرئيسي بالمعادي",
+    "Vacancy: accountant needed, 3+ years experience, monthly salary, apply via LinkedIn with your CV",
+    # family / personal
+    "يا رياد وصلت البيت، كلمني لما تفضى",
+    "بابا: فلوس الكهرباء معاك ولا أشحن العداد أنا؟",
+    "هي يا ستي الوحشة، بعتلك صور العيلة على واتساب",
+    "ماما: موبايلي شحنه خلص هكلمك من تليفون البيت",
+    # marketplace legit
+    "التليفون لسه موجود، تيجي تشوفه النهاردة الساعة 7 في مدينة نصر؟",
+    "أنا وصلت تحت العمارة، انزل استلم المنتج وادفع كاش",
+    "معذرة السعر نهائي، لو مناسبك نتقابل بكرة في محطة المترو",
+    # work
+    "اجتماع الفريق اتنقل لبكرة الساعة 11 على زوم",
+    "أستاذ رياد، التقرير المطلوب هيكون جاهز آخر الأسبوع إن شاء الله",
+    # gov real
+    "وزارة الصحة: موعد تطعيمك يوم الخميس في وحدة صحة الحي الرابع",
+    "تم تجديد رخصة القيادة بنجاح عبر بوابة مصر الرقمية، يمكنك استلامها من وحدة المرور",
+]
+
+
+# ---------- V2 legit lookalikes: close collisions with scam wording ----------
+def _v2_legit_lookalikes():
+    out = []
+    amounts = ["200", "400", "750", "1200", "1500", "3000", "500", "950"]
+    senders = ["محمد أ.", "شركة النور", "أحمد س.", "حساب شركتنا", "منى ع.", "والدك"]
+    wallets = ["فودافون كاش", "انستاباي", "اتصالات كاش", "اورانج موني"]
+    i = 0
+    for w in wallets:
+        for a in amounts:
+            s = senders[i % len(senders)]
+            bal = int(a) + 137
+            out.append(f"{w}: استلمت {a} جنيه من {s}، رصيدك الحالي {bal} جنيه")
+            out.append(f"وصلك تحويل {a} جنيه من {s} عبر {w}")
+            i += 1
+    out += [
+        "CIB: تم إضافة مبلغ 9500 جنيه إلى حسابك، الرصيد المتاح 22,310 جنيه",
+        "بنك مصر: تم خصم 780 جنيه من بطاقتك لدى متجر سبينيس، رصيدك المتاح 14,020 جنيه",
+        "البنك الأهلي: تم استلام حوالة خارجية بقيمة 500 دولار وإضافتها لحسابك",
+        "QNB: تم تنفيذ التحويل بنجاح، الرصيد الحالي 9,800 جنيه",
+        "كود التحقق الخاص بك هو 482910، صالح لمدة 5 دقائق، لا تشاركه مع أي شخص",
+        "رمز الدخول: 551208، إذا لم تقم بهذه العملية اتصل بالبنك فورا",
+        "Your verification code is 664291. Never share it with anyone.",
+        "رمز تأكيد العملية: 093214، فريق البنك لن يطلبه منك أبدا",
+        "مطلوب سكرتيرة للعمل بمكتب محاماة، الدوام 9 ل 5، الراتب 6000 جنيه شهري، المقابلة بالمكتب",
+        "وظيفة خدمة عملاء بشركة اتصالات، راتب ثابت 7500 جنيه شهريا + حوافز، التقديم من موقع الشركة",
+        "مطلوب مهندس مدني خبرة 5 سنوات لموقع بالعاصمة الإدارية، المرتب حسب الخبرة، ارسل سيرتك على الإيميل",
+        "شركة مقاولات تطلب محاسبين، مقابلات يوم الخميس في المقر، يفضل قرب السكن من مدينة نصر",
+        "We are hiring a sales rep in Cairo, 2 years experience, monthly pay, apply with your CV on LinkedIn",
+        "Hiring: backend engineer, remote within Egypt, monthly salary, apply through our careers page",
+        "Vacancy: pharmacist needed in Tanta, full-time, apply at the branch with your documents",
+        "بوابة مصر الرقمية: تم استلام طلبك لتجديد بطاقة الرقم القومي وسيتم التوصيل خلال 7 أيام عمل",
+        "وزارة الداخلية: تم تجديد رخصة سيارتك بنجاح، يمكنك استلامها من وحدة المرور",
+        "الشهر العقاري: موعدك لتوقيع العقد يوم الثلاثاء الساعة 11 صباحا في المكتب الرئيسي",
+        "شحنتك من نون هتوصلك النهاردة، المندوب هيكلمك قبل الوصول",
+        "جوميا: طلبك اتسلم للمندوب وجاي في الطريق، تابعه من التطبيق",
+        "تم تسليم طلبك بنجاح، نتمنى تقيم تجربتك في التطبيق",
+        "فودافون: اتجددت باقتك بنجاح، لإدارة اشتراكاتك زور تطبيق أنا فودافون",
+        "وي: عرض الإنترنت الأرضي الجديد، سرعات أعلى بنفس السعر، للاشتراك زور أقرب فرع",
+        "يا ابني وصلت بخير، متقلقش عليا",
+        "الاجتماع اتأجل لبكرة الساعة 12، اعتذر عن التغيير المفاجئ",
+        "هات معاك 2 كيلو طماطم وانت جاي على البيت لو سمحت",
+        "Happy birthday! Hope you have a great year ahead",
+        "Meeting moved to 3pm tomorrow, same link",
+    ]
+    return out
+
+
+EG_LEGIT_V2B = _v2_legit_lookalikes()
+
+
 def main():
     legit = []
     scam = []
@@ -245,9 +490,9 @@ def main():
         (scam if r[1] else legit).append(r)
     for r in read_moz(os.path.join(DATA, "moz_smishing.csv")):
         (scam if r[1] else legit).append(r)
-    for t in EG_SCAM + EG_SCAM_EXTRA:
+    for t in EG_SCAM + EG_SCAM_EXTRA + EG_SCAM_V2:
         scam.append((t, 1, "eg_synthetic"))
-    for t in EG_LEGIT + EG_LEGIT_EXTRA:
+    for t in EG_LEGIT + EG_LEGIT_EXTRA + EG_LEGIT_V2 + EG_LEGIT_V2B:
         legit.append((t, 0, "eg_synthetic"))
     # verbatim phrases quoted in public Egyptian warnings (see EGYPT_PATTERNS.md)
     for t in ["مبروك كسبت جائزة", "مبروك كسبت جائزة مالية كبيرة اضغط هنا لاستلامها"]:
